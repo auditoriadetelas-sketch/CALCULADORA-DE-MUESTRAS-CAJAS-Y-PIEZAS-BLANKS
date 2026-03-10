@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>Calculadora de Muestras de Auditoría</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; padding: 20px; }
         .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -31,10 +33,11 @@
         .muestra-valor { font-weight: bold; color: #2563eb; font-size: 1.1em; }
         input { width: 90%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; }
         
-        .no-print { margin-top: 25px; display: flex; gap: 10px; }
-        .btn { padding: 12px 24px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; flex: 1; transition: 0.2s; }
+        .no-print { margin-top: 25px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn { padding: 12px 24px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; flex: 1; transition: 0.2s; min-width: 150px; }
         .btn-add { background: #10b981; color: white; }
         .btn-pdf { background: #ef4444; color: white; }
+        .btn-excel { background: #1d6f42; color: white; } /* Color Excel */
         .btn-calc { background: #2563eb; color: white; }
         .btn-remove { background: #fee2e2; color: #ef4444; padding: 5px 10px; border-radius: 4px; }
     </style>
@@ -84,6 +87,7 @@
         <button class="btn btn-add" onclick="agregarFila()">+ Agregar Color</button>
         <button class="btn btn-calc" onclick="calcular()">Calcular Muestra</button>
         <button class="btn btn-pdf" onclick="descargarPDF()">Descargar PDF</button>
+        <button class="btn btn-excel" onclick="descargarExcel()">Descargar Excel</button>
     </div>
 </div>
 
@@ -159,6 +163,37 @@
         }).from(element).save().then(() => {
             document.querySelectorAll('.accion-col').forEach(el => el.style.display = 'table-cell');
         });
+    }
+
+    function descargarExcel() {
+        const data = [];
+        // Encabezados
+        data.push(["Color / Estilo", "Cant. Cajas", "Cant. Piezas", "Muestra Cajas", "Muestra Piezas"]);
+
+        // Filas de la tabla
+        document.querySelectorAll("#tablaColores tbody tr").forEach(fila => {
+            data.push([
+                fila.querySelector('.c-nom').value,
+                fila.querySelector('.c-caj').value,
+                fila.querySelector('.c-pie').value,
+                fila.querySelector('.res-c').innerText,
+                fila.querySelector('.res-p').innerText
+            ]);
+        });
+
+        // Totales
+        data.push([]);
+        data.push(["TOTALES", 
+            document.getElementById('tCajas').innerText, 
+            document.getElementById('tPiezas').innerText,
+            document.getElementById('mTotalCajas').innerText,
+            document.getElementById('mTotalPiezas').innerText
+        ]);
+
+        const worksheet = XLSX.utils.aoa_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Auditoria");
+        XLSX.writeFile(workbook, "Muestra_Auditoria.xlsx");
     }
 
     agregarFila();
